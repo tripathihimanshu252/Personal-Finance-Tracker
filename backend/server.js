@@ -19,9 +19,18 @@ if (mainRedisUrl.includes('redis-cli --tls -u ')) {
     mainRedisUrl = mainRedisUrl.replace('redis-cli --tls -u ', '').trim();
 }
 
-// 🚀 2. Redis Client Initialize (Cleaned Cloud URL support ke sath)
+// 🚀 2. Redis Client Initialize (Cleaned Cloud URL & Smart Reconnect limits ke sath)
 const redisClient = redis.createClient({
-  url: mainRedisUrl
+  url: mainRedisUrl,
+  socket: {
+    reconnectStrategy: (retries) => {
+      if (retries > 3) {
+        console.log('⚠️ Redis Main: Maximum reconnect retries reached. Stopping socket loop.');
+        return false; // Upstash constant connection drop loops ko roknis ke liye
+      }
+      return Math.min(retries * 1000, 3000); // Retries ke beech delay badhaega
+    }
+  }
 });
 
 redisClient.on('connect', () => console.log('🔴 Redis Server Connected Successfully!'));
@@ -43,11 +52,11 @@ app.use(helmet());
 app.use(express.json({ limit: '10kb' })); // Prevents large payload body attacks
 
 app.use(cors({ 
-    origin: "https://your-frontend-vercel-url.vercel.app", // Aapka vercel link
+    origin: "https://your-frontend-vercel-url.vercel.app", // Aapka vercel link badal lena baad me
     credentials: true
 }));
 
-// 2. HR Requirement: Rate Limiting for different endpoints
+// 2. Rate Limiting Configurations
 const authLimiter = rateLimit({
     windowMs: 15 * 61 * 1000, // 15 minutes
     max: 5,
@@ -90,5 +99,5 @@ sequelize.sync()
         console.error('Database connection failed:', err.message);
     });
 
-// 🚀 3. redisClient ko export kar rahe hain taaki controller automatic ise use kar sakein
+// 🚀 3. redisClient ko export kar rahe hain taaki baki controllers ise reuse kar sakein
 module.exports = { app, redisClient };
