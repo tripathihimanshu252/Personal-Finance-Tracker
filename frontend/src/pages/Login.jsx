@@ -12,8 +12,17 @@ const Login = () => {
         e.preventDefault();
         try {
             const { data } = await API.post('/auth/login', { email, password });
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
+            localStorage.setItem("token", data.token);
+
+            localStorage.setItem(
+              "user",
+              JSON.stringify({
+                id: data.id,
+                name: data.name,
+                email: data.email,
+                role: data.role
+              })
+        );
             navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.message || 'Something went wrong');
