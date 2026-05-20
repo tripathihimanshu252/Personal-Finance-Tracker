@@ -1,15 +1,56 @@
-const express = require('express');
-const { createTransaction, getTransactions, updateTransaction, deleteTransaction } = require('../controllers/transactionController');
-const { protect, authorize } = require('../middlewares/authMiddleware');
-const { transactionLimiter } = require('../middlewares/rateLimiter');
+const express = require("express");
+
+const {
+  createTransaction,
+  getTransactions,
+  updateTransaction,
+  deleteTransaction
+} = require("../controllers/transactionController");
+
+const {
+  protect,
+  authorizeRoles
+} = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
-router.use(protect);
+// Get All Transactions
+// Accessible to all roles
 
-router.get('/', transactionLimiter, getTransactions);
-router.post('/', transactionLimiter, authorize('admin', 'user'), createTransaction);
-router.put('/:id', transactionLimiter, authorize('admin', 'user'), updateTransaction);
-router.delete('/:id', transactionLimiter, authorize('admin', 'user'), deleteTransaction);
+router.get(
+  "/",
+  protect,
+  getTransactions
+);
+
+// Create Transaction
+// Only admin & user
+
+router.post(
+  "/",
+  protect,
+  authorizeRoles("admin", "user"),
+  createTransaction
+);
+
+// Update Transaction
+// Only admin & user
+
+router.put(
+  "/:id",
+  protect,
+  authorizeRoles("admin", "user"),
+  updateTransaction
+);
+
+// Delete Transaction
+// Only admin & user
+
+router.delete(
+  "/:id",
+  protect,
+  authorizeRoles("admin", "user"),
+  deleteTransaction
+);
 
 module.exports = router;
