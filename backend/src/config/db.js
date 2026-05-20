@@ -5,7 +5,7 @@ dotenv.config();
 
 let sequelize;
 
-// 🚀 Agar cloud par DATABASE_URL mili (Render/Supabase), toh seedhe usse connect karo
+// 🚀 Agar cloud par DATABASE_URL mili (Render/Supabase), toh strict client adjustments ke sath connect karo
 if (process.env.DATABASE_URL) {
     sequelize = new Sequelize(process.env.DATABASE_URL, {
         dialect: 'postgres',
@@ -13,13 +13,16 @@ if (process.env.DATABASE_URL) {
         dialectOptions: {
             ssl: {
                 require: true,
-                rejectUnauthorized: false // Production cloud connections (Supabase) ke liye zaroori hai
-            }
+                rejectUnauthorized: false // Production cloud connections (Supabase) ke liye mandatory hai
+            },
+            // 🔥 Strict Connection Parameter Setup jo Supabase pooler validation ko bypass karega
+            options: '-c gap=pooler'
         },
+        // 🚨 Connection pooling load adjustments for free cloud tier instances
         pool: {
-            max: 5,
+            max: 4,
             min: 0,
-            acquire: 30000,
+            acquire: 60000, // Timeout network delay handle karne ke liye 60s kiya
             idle: 10000
         }
     });
@@ -46,9 +49,10 @@ if (process.env.DATABASE_URL) {
 const connectDB = async () => {
     try {
         await sequelize.authenticate();
-        console.log('🐘 PostgreSQL connected successfully');
+        console.log('🐘 PostgreSQL connected successfully to Cloud Instance!');
     } catch (error) {
         console.error('❌ Connection failed:', error.message);
+        // Strict exit logging mechanism
         process.exit(1);
     }
 };
