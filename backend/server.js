@@ -14,8 +14,9 @@ const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const app = express();
 
 // 🚀 2. Redis Client Initialize aur Connect karna
+// 🚀 2. Redis Client Initialize (Environment Variable Support ke sath)
 const redisClient = redis.createClient({
-    url: 'redis://127.0.0.1:6379' // Default local port
+  url: process.env.REDIS_URL || 'redis://127.0.0.1:6379'
 });
 
 redisClient.on('connect', () => console.log('🔴 Redis Server Connected Successfully!'));
@@ -31,8 +32,8 @@ app.use(helmet());
 app.use(express.json({ limit: '10kb' })); // Prevents large payload body attacks
 
 app.use(cors({ 
-    origin: 'http://localhost:5173', 
-    credentials: true 
+    origin: "https://your-frontend-vercel-url.vercel.app", // Aapka vercel link
+  credentials: true
 }));
 
 // 2. HR Requirement: Rate Limiting for different endpoints
