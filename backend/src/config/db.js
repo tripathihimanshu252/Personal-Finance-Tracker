@@ -5,29 +5,28 @@ dotenv.config();
 
 let sequelize;
 
-// 🚀 Agar cloud par DATABASE_URL mili (Render/Supabase), toh strict client adjustments ke sath connect karo
 if (process.env.DATABASE_URL) {
+    // 🚀 Cloud Environment (Render + Supabase Session Pooler Fix)
     sequelize = new Sequelize(process.env.DATABASE_URL, {
         dialect: 'postgres',
         logging: false,
         dialectOptions: {
             ssl: {
                 require: true,
-                rejectUnauthorized: false // Production cloud connections (Supabase) ke liye mandatory hai
+                rejectUnauthorized: false // Production cloud layers ke liye zaroori hai
             },
-            // 🔥 Strict Connection Parameter Setup jo Supabase pooler validation ko bypass karega
-            options: '-c gap=pooler'
+            // 🔥 Yeh application details Supabase router ko strict path validation feed karegi
+            application_name: "personal_finance_tracker"
         },
-        // 🚨 Connection pooling load adjustments for free cloud tier instances
         pool: {
-            max: 4,
+            max: 3, // Free tier resources optimized parameters
             min: 0,
-            acquire: 60000, // Timeout network delay handle karne ke liye 60s kiya
+            acquire: 60000, // Timeout to 60 seconds to handle network delays
             idle: 10000
         }
     });
 } else {
-    // 🏠 Agar local computer hai, toh tumhara purana config automatic chalega
+    // 🏠 Local Development Engine
     sequelize = new Sequelize(
         process.env.DB_NAME,
         process.env.DB_USER,
@@ -49,10 +48,9 @@ if (process.env.DATABASE_URL) {
 const connectDB = async () => {
     try {
         await sequelize.authenticate();
-        console.log('🐘 PostgreSQL connected successfully to Cloud Instance!');
+        console.log('🐘 PostgreSQL cloud server pipeline connected successfully!');
     } catch (error) {
-        console.error('❌ Connection failed:', error.message);
-        // Strict exit logging mechanism
+        console.error('❌ Database connectivity crashed:', error.message);
         process.exit(1);
     }
 };
