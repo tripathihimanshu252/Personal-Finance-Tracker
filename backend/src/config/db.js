@@ -6,22 +6,21 @@ dotenv.config();
 let sequelize;
 
 if (process.env.DATABASE_URL) {
-    // 🚀 Cloud Environment (Render + Supabase Session Pooler Fix)
+    // 🚀 Cloud Environment (Render + Supabase Transaction Pooler Fix)
     sequelize = new Sequelize(process.env.DATABASE_URL, {
         dialect: 'postgres',
         logging: false,
         dialectOptions: {
             ssl: {
                 require: true,
-                rejectUnauthorized: false // Production cloud layers ke liye zaroori hai
-            },
-            // 🔥 Yeh application details Supabase router ko strict path validation feed karegi
-            application_name: "personal_finance_tracker"
+                // 🔥 Strict SSL configuration adjustment for self-signed certificates
+                rejectUnauthorized: false 
+            }
         },
         pool: {
-            max: 3, // Free tier resources optimized parameters
+            max: 3, 
             min: 0,
-            acquire: 60000, // Timeout to 60 seconds to handle network delays
+            acquire: 60000, 
             idle: 10000
         }
     });
