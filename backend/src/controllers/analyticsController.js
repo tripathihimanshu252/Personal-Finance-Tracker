@@ -2,9 +2,15 @@ const { Sequelize } = require('sequelize');
 const Transaction = require('../models/Transaction');
 const redis = require('redis');
 
-// 🚀 Production-ready Redis Client Configuration (With Local Fallback)
+// 🧼 String cleaning logic agar controller ke andar direct call ho jaye
+let rawRedisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+if (rawRedisUrl.includes('redis-cli --tls -u ')) {
+    rawRedisUrl = rawRedisUrl.replace('redis-cli --tls -u ', '').trim();
+}
+
+// 🚀 Cleaned Cloud URL se client initialize karo (Line 6 Error Strict Fix)
 const redisClient = redis.createClient({ 
-    url: process.env.REDIS_URL || 'redis://127.0.0.1:6379' 
+    url: rawRedisUrl 
 });
 
 redisClient.on('error', (err) => console.error('❌ Analytics Redis Error:', err));
