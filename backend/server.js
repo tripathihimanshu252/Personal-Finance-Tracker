@@ -13,10 +13,15 @@ const analyticsRoutes = require('./src/routes/analyticsRoutes');
 
 const app = express();
 
-// 🚀 2. Redis Client Initialize aur Connect karna
-// 🚀 2. Redis Client Initialize (Environment Variable Support ke sath)
+// 🧼 Redis URL Cleaning Logic (Agar Render dashboard/env me terminal command inject ho jaye)
+let mainRedisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+if (mainRedisUrl.includes('redis-cli --tls -u ')) {
+    mainRedisUrl = mainRedisUrl.replace('redis-cli --tls -u ', '').trim();
+}
+
+// 🚀 2. Redis Client Initialize (Cleaned Cloud URL support ke sath)
 const redisClient = redis.createClient({
-  url: process.env.REDIS_URL || 'redis://127.0.0.1:6379'
+  url: mainRedisUrl
 });
 
 redisClient.on('connect', () => console.log('🔴 Redis Server Connected Successfully!'));
@@ -24,7 +29,13 @@ redisClient.on('error', (err) => console.error('❌ Redis Connection Error:', er
 
 // Redis connection trigger karna (IIFE)
 (async () => {
-    await redisClient.connect();
+    try {
+        if (!redisClient.isOpen) {
+            await redisClient.connect();
+        }
+    } catch (err) {
+        console.error('❌ Redis Connection Trigger Failed:', err.message);
+    }
 })();
 
 // 1. Security Middlewares (XSS aur SQL injection base layers protection)
@@ -33,7 +44,7 @@ app.use(express.json({ limit: '10kb' })); // Prevents large payload body attacks
 
 app.use(cors({ 
     origin: "https://your-frontend-vercel-url.vercel.app", // Aapka vercel link
-  credentials: true
+    credentials: true
 }));
 
 // 2. HR Requirement: Rate Limiting for different endpoints
